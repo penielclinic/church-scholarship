@@ -81,7 +81,7 @@ export default async function HomePage() {
               <thead>
                 <tr className="bg-gray-100">
                   <th className="border border-gray-300 px-3 py-2 text-left font-semibold w-28">장학금 종류</th>
-                  <th className="border border-gray-300 px-3 py-2 text-left font-semibold">지급 대상 및 기준</th>
+                  <th className="border border-gray-300 px-3 py-2 text-left font-semibold">지급 대상</th>
                   <th className="border border-gray-300 px-3 py-2 text-center font-semibold w-20">중복 가능</th>
                 </tr>
               </thead>
@@ -92,7 +92,7 @@ export default async function HomePage() {
                   { name: '다비다 장학금', desc: '생활 보조 대상 · 대학·대학원생', dup: false },
                   { name: '다니엘 장학금', desc: '학업 우수자 · 대학·대학원생', dup: false },
                   { name: '빌립 장학금', desc: '전도 활동 · 초·중·고·대학·대학원생', dup: true },
-                  { name: '특별 장학금', desc: '위에 해당하지 않는 특별 지원 사유', dup: false },
+                  { name: '특별 장학금', desc: '위에 해당하지 않는 특별 지원 사유 · 심사 후 1명만 선정', dup: false },
                 ].map((s, i) => (
                   <tr key={s.name} className={i % 2 === 1 ? 'bg-gray-50' : ''}>
                     <td className="border border-gray-300 px-3 py-2 font-medium whitespace-nowrap">{s.name}</td>
