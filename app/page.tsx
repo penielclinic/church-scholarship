@@ -1,6 +1,34 @@
 import Link from 'next/link'
+import { supabaseAdmin } from '@/lib/supabase'
 
-export default function HomePage() {
+export const revalidate = 0
+
+export default async function HomePage() {
+  // 활성화된 공고문 조회
+  const { data: announcement } = await supabaseAdmin
+    .from('scholarship_announcements')
+    .select('*')
+    .eq('is_active', true)
+    .single()
+
+  // 활성화된 장학금 규정 조회
+  const { data: currentRule } = await supabaseAdmin
+    .from('scholarship_rules')
+    .select('file_url')
+    .eq('is_current', true)
+    .single()
+
+  const rulesUrl = currentRule?.file_url || '/scholarship-rules.pdf'
+
+  const year = announcement?.year ?? new Date().getFullYear()
+  const semester = announcement?.semester ?? 1
+  const deadline = announcement?.deadline ?? ''
+  const notes = announcement?.notes ?? ''
+
+  const docNo = `장학 - ${year} - 00${semester}`
+  const semesterLabel = `${year}년도 제 ${semester} 학기`
+  const dateLabel = `${year}년 ${semester === 1 ? '1' : '7'}월`
+
   return (
     <div className="min-h-screen bg-stone-100 py-8 px-4">
       {/* 관리자 링크 */}
@@ -10,7 +38,7 @@ export default function HomePage() {
         </Link>
       </div>
 
-      {/* 공고문 카드 — 실제 문서처럼 */}
+      {/* 공고문 카드 */}
       <div className="max-w-2xl mx-auto bg-white shadow-lg border border-gray-300" style={{ fontFamily: "'Malgun Gothic', '맑은 고딕', sans-serif" }}>
 
         {/* 상단 교회 헤더 */}
@@ -21,9 +49,9 @@ export default function HomePage() {
 
         {/* 공고 제목 */}
         <div className="px-10 pt-8 pb-6 text-center border-b border-gray-200">
-          <p className="text-xs text-gray-500 tracking-widest mb-2">장 학 - 2025 - 001 호</p>
+          <p className="text-xs text-gray-500 tracking-widest mb-2">{docNo} 호</p>
           <h1 className="text-2xl font-bold text-gray-900 leading-snug" style={{ letterSpacing: '0.05em' }}>
-            2025년도 제 1 학기<br />장 학 생 선 발 공 고
+            {semesterLabel}<br />장 학 생 선 발 공 고
           </h1>
           <p className="mt-4 text-sm text-gray-600 leading-relaxed" style={{ wordBreak: 'keep-all' }}>
             해운대순복음교회 장학위원회는 학생의 학비 부담을 경감하고<br />
@@ -84,7 +112,9 @@ export default function HomePage() {
           {/* 3. 신청 기간 */}
           <div className="flex gap-4">
             <span className="font-bold whitespace-nowrap text-gray-900 w-28 shrink-0">3. 신청 기간</span>
-            <p style={{ wordBreak: 'keep-all' }}>공고일로부터 2025년 2월 23일(일)까지</p>
+            <p style={{ wordBreak: 'keep-all' }}>
+              {deadline || '추후 공고 예정'}
+            </p>
           </div>
 
           {/* 4. 신청 방법 */}
@@ -99,7 +129,7 @@ export default function HomePage() {
           {/* 5. 제출처 */}
           <div className="flex gap-4">
             <span className="font-bold whitespace-nowrap text-gray-900 w-28 shrink-0">5. 제출처</span>
-            <p>교회 사무실</p>
+            <p>교회사무실, 온라인신청</p>
           </div>
 
           {/* 6. 선발 절차 */}
@@ -116,21 +146,18 @@ export default function HomePage() {
             <p style={{ wordBreak: 'keep-all' }}>장학위원회 결정 후 개별 통지</p>
           </div>
 
-          {/* 장학금 금액 안내 */}
-          <div className="border border-gray-300 bg-gray-50 px-5 py-4" style={{ wordBreak: 'keep-all' }}>
-            <p className="text-xs font-bold text-gray-700 mb-1.5">【 장학금 금액 안내 】</p>
-            <ul className="text-xs text-gray-600 space-y-0.5 list-none">
-              <li>· 봉사장학금(바나바) 100,000원 &nbsp;|&nbsp; 전도장학금(빌립) 100,000원</li>
-              <li>· 초등학교 1학년 ~ 고등학교 3학년 : 최대 4,800,000원 (12년 × 2학기)</li>
-              <li>· 대학원까지 : 최대 10,800,000원 (27학기 누적 기준)</li>
-              <li>· 빌립 장학금은 타 장학금과 중복 수령 가능</li>
-            </ul>
-          </div>
+          {/* 추가 공지사항 */}
+          {notes && (
+            <div className="border-l-4 border-blue-400 bg-blue-50 px-4 py-3 text-sm text-gray-700" style={{ wordBreak: 'keep-all' }}>
+              <p className="font-semibold text-blue-800 mb-1 text-xs">【 추가 공지사항 】</p>
+              <p className="whitespace-pre-wrap">{notes}</p>
+            </div>
+          )}
         </div>
 
         {/* 하단 날짜 / 기관명 */}
         <div className="border-t-2 border-gray-800 px-10 py-6 text-center">
-          <p className="text-sm text-gray-700 mb-1">2025년 1월</p>
+          <p className="text-sm text-gray-700 mb-1">{dateLabel}</p>
           <p className="text-base font-bold tracking-widest text-gray-900">
             해 운 대 순 복 음 교 회 장 학 위 원 회
           </p>
@@ -161,7 +188,7 @@ export default function HomePage() {
             </Link>
           </div>
           <a
-            href="/scholarship-rules.pdf"
+            href={rulesUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 border border-gray-400 text-gray-600 rounded px-5 py-2.5 text-sm hover:bg-gray-100 transition-colors w-full"

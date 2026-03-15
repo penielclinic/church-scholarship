@@ -34,6 +34,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link href="/admin/search" className="text-sm text-gray-600 hover:text-gray-900 transition-colors whitespace-nowrap">
               수령 조회
             </Link>
+            <Link href="/admin/rules" className="text-sm text-gray-600 hover:text-gray-900 transition-colors whitespace-nowrap">
+              장학금 규정
+            </Link>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-500">{session.name} 님</span>

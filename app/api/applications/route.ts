@@ -35,7 +35,33 @@ export async function POST(request: NextRequest) {
   // Generate recommender token
   const recommender_token = crypto.randomUUID()
 
-  const fullBody = { ...body, recommender_token }
+  // 신청 학기의 장학금액 스냅샷 조회 (금액 고정)
+  let amount_k12 = 0, amount_univ = 0, amount_grad = 0
+  if (body.scholarship_id && body.year && body.semester) {
+    const { data: semAmt } = await supabaseAdmin
+      .from('scholarship_semester_amounts')
+      .select('amount_k12, amount_univ, amount_grad')
+      .eq('scholarship_id', body.scholarship_id)
+      .eq('year', body.year)
+      .eq('semester', body.semester)
+      .single()
+
+    if (semAmt) {
+      amount_k12 = semAmt.amount_k12
+      amount_univ = semAmt.amount_univ
+      amount_grad = semAmt.amount_grad
+    } else {
+      // 학기별 금액이 없으면 scholarships 기본 금액 사용
+      const { data: sc } = await supabaseAdmin
+        .from('scholarships')
+        .select('amount_k12, amount_univ, amount_grad')
+        .eq('id', body.scholarship_id)
+        .single()
+      if (sc) { amount_k12 = sc.amount_k12; amount_univ = sc.amount_univ; amount_grad = sc.amount_grad }
+    }
+  }
+
+  const fullBody = { ...body, recommender_token, amount_k12, amount_univ, amount_grad }
 
   // Try insert with all fields
   let { data, error } = await supabaseAdmin
