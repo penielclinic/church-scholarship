@@ -143,7 +143,7 @@ export default async function HomePage() {
           {/* 7. 지급 방법 */}
           <div className="flex gap-4">
             <span className="font-bold whitespace-nowrap text-gray-900 w-28 shrink-0">7. 지급 방법</span>
-            <p style={{ wordBreak: 'keep-all' }}>장학위원회 결정 후 개별 통지</p>
+            <p style={{ wordBreak: 'keep-all' }}>장학위원회 결정 후 통지</p>
           </div>
 
           {/* 추가 공지사항 */}
