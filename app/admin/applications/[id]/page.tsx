@@ -2,6 +2,9 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase'
 import { StatusUpdateForm } from './status-update-form'
+import { ApplicationEditForm } from './application-edit-form'
+import { DeleteButton } from './delete-button'
+import { RecommendLink } from './recommend-link'
 
 const STATUS_LABELS: Record<string, string> = {
   pending: '검토 중',
@@ -22,6 +25,7 @@ const LEVEL_LABELS: Record<string, string> = {
   middle: '중학',
   high: '고등',
   university: '대학',
+  graduate: '대학원',
 }
 
 export default async function ApplicationDetailPage({
@@ -32,18 +36,25 @@ export default async function ApplicationDetailPage({
   const { id } = await params
   const { data: app, error } = await supabaseAdmin
     .from('applications')
-    .select('*, scholarships(name, amount)')
+    .select('*, scholarships(id, name, amount)')
     .eq('id', id)
     .single()
 
   if (error || !app) notFound()
 
+  const { data: scholarships } = await supabaseAdmin
+    .from('scholarships')
+    .select('id, name')
+    .eq('is_active', true)
+    .order('id')
+
   return (
     <div className="max-w-2xl">
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center justify-between mb-6">
         <Link href="/admin/applications" className="text-sm text-gray-500 hover:text-gray-700">
           ← 목록으로
         </Link>
+        <DeleteButton id={app.id} />
       </div>
 
       <div className="bg-white rounded-xl border p-6 mb-4">
@@ -96,36 +107,48 @@ export default async function ApplicationDetailPage({
           </div>
           <div>
             <p className="text-gray-500 mb-0.5">장학 프로그램</p>
-            <p>{app.scholarships?.name ?? '-'} ({app.scholarships?.amount?.toLocaleString()}원)</p>
+            <p className="whitespace-nowrap">{app.scholarships?.name ?? '-'}</p>
           </div>
         </div>
 
         <div className="mt-4">
           <p className="text-gray-500 text-sm mb-0.5">신청 이유</p>
-          <p className="text-sm bg-gray-50 rounded-lg p-3" style={{ wordBreak: 'keep-all' }}>{app.reason}</p>
+          <p className="text-sm bg-gray-50 rounded-lg p-3 whitespace-pre-wrap" style={{ wordBreak: 'keep-all' }}>{app.reason}</p>
         </div>
 
-        {app.recommender_name && (
-          <div className="mt-4 border-t pt-4">
-            <p className="text-gray-500 text-sm mb-2">추천인 정보</p>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <p className="text-gray-500 mb-0.5">추천인</p>
-                <p>{app.recommender_name} ({app.recommender_title})</p>
-              </div>
-              <div>
-                <p className="text-gray-500 mb-0.5">연락처</p>
-                <p>{app.recommender_phone}</p>
-              </div>
-              {app.recommender_comment && (
-                <div className="col-span-2">
-                  <p className="text-gray-500 mb-0.5">추천 내용</p>
-                  <p className="bg-gray-50 rounded-lg p-3" style={{ wordBreak: 'keep-all' }}>{app.recommender_comment}</p>
+        {/* 추천인 정보 */}
+        <div className="mt-4 border-t pt-4">
+          <p className="text-gray-500 text-sm mb-2">추천인 정보</p>
+          {app.recommender_name ? (
+            <div className="space-y-2 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-gray-500 mb-0.5">추천인</p>
+                  <p>{app.recommender_name} ({app.recommender_title})</p>
                 </div>
+                <div>
+                  <p className="text-gray-500 mb-0.5">연락처</p>
+                  <p>{app.recommender_phone ?? '-'}</p>
+                </div>
+              </div>
+              {app.recommender_comment ? (
+                <div>
+                  <p className="text-gray-500 mb-0.5">추천 내용</p>
+                  <p className="bg-gray-50 rounded-lg p-3 whitespace-pre-wrap" style={{ wordBreak: 'keep-all' }}>{app.recommender_comment}</p>
+                </div>
+              ) : (
+                <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">추천서 미작성 — 아래 링크를 추천인에게 공유하세요.</p>
               )}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-xs text-gray-400">추천인 정보 없음</p>
+          )}
+
+          {/* 추천서 링크 */}
+          {app.recommender_token && (
+            <RecommendLink token={app.recommender_token} />
+          )}
+        </div>
 
         {/* 첨부서류 */}
         {(() => {
@@ -138,13 +161,8 @@ export default async function ApplicationDetailPage({
                 {attachments.map((url: string, i: number) => {
                   const filename = decodeURIComponent(url.split('/').pop() ?? `파일 ${i + 1}`)
                   return (
-                    <a
-                      key={i}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
-                    >
+                    <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
                       <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                       </svg>
@@ -166,7 +184,24 @@ export default async function ApplicationDetailPage({
         )}
       </div>
 
+      {/* 상태 변경 */}
       <StatusUpdateForm applicationId={app.id} currentStatus={app.status} />
+
+      {/* 신청서 수정 */}
+      <ApplicationEditForm
+        app={{
+          id: app.id,
+          student_name: app.student_name,
+          birth_date: app.birth_date,
+          school: app.school,
+          school_level: app.school_level,
+          grade: app.grade,
+          contact: app.contact,
+          reason: app.reason,
+          scholarship_id: app.scholarship_id,
+        }}
+        scholarships={scholarships ?? []}
+      />
     </div>
   )
 }
