@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   // 활성 장학 프로그램 목록
   const { data: programs } = await supabaseAdmin
     .from('scholarships')
-    .select('id, name, amount_k12, amount_univ')
+    .select('id, name, amount_k12, amount_univ, amount_grad')
     .eq('is_active', true)
     .order('id')
 
