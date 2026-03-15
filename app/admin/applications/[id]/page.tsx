@@ -154,25 +154,29 @@ export default async function ApplicationDetailPage({
         {(() => {
           let attachments: string[] = []
           try { attachments = JSON.parse(app.attachments ?? '[]') } catch {}
-          return attachments.length > 0 ? (
+          return (
             <div className="mt-4 border-t pt-4">
               <p className="text-gray-500 text-sm mb-2">첨부서류 ({attachments.length}개)</p>
-              <div className="space-y-1.5">
-                {attachments.map((url: string, i: number) => {
-                  const filename = decodeURIComponent(url.split('/').pop() ?? `파일 ${i + 1}`)
-                  return (
-                    <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
-                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                      </svg>
-                      {filename}
-                    </a>
-                  )
-                })}
-              </div>
+              {attachments.length > 0 ? (
+                <div className="space-y-1.5">
+                  {attachments.map((url: string, i: number) => {
+                    const filename = decodeURIComponent(url.split('/').pop() ?? `파일 ${i + 1}`)
+                    return (
+                      <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
+                        <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                        {filename}
+                      </a>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400">첨부파일 없음</p>
+              )}
             </div>
-          ) : null
+          )
         })()}
 
         {app.reviewed_at && (

@@ -76,10 +76,11 @@ export async function POST(request: NextRequest) {
       'student_name', 'birth_date', 'school', 'school_level', 'grade',
       'contact', 'year', 'semester', 'reason', 'scholarship_id',
       'recommender_name', 'recommender_title', 'recommender_phone', 'recommender_comment',
+      'attachments', 'photo_url', 'recommender_token',
       'status', 'paid_amount', 'paid_at', 'reviewed_by', 'reviewed_at', 'status_note',
     ]
     const filtered = Object.fromEntries(
-      CORE.filter(k => k in body && body[k] !== undefined && body[k] !== null).map(k => [k, body[k]])
+      CORE.filter(k => k in fullBody && fullBody[k] !== undefined && fullBody[k] !== null).map(k => [k, fullBody[k]])
     )
     const result = await supabaseAdmin.from('applications').insert(filtered).select().single()
     if (result.error) return NextResponse.json({ error: result.error.message }, { status: 500 })
