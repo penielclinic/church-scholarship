@@ -39,11 +39,12 @@ export function ScholarshipManager({ scholarships }: { scholarships: Scholarship
   const [amountUniv, setAmountUniv] = useState('')
   const [amountGrad, setAmountGrad] = useState('')
   const [loading, setLoading] = useState(false)
+  const [formError, setFormError] = useState('')
 
   const resetForm = () => {
     setName(''); setDescription('')
     setAmountK12(''); setAmountUniv(''); setAmountGrad('')
-    setEditing(null); setShowForm(false)
+    setEditing(null); setShowForm(false); setFormError('')
   }
 
   const openEdit = (s: Scholarship) => {
@@ -56,7 +57,7 @@ export function ScholarshipManager({ scholarships }: { scholarships: Scholarship
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); setLoading(true)
+    e.preventDefault(); setLoading(true); setFormError('')
     const body = {
       name, description,
       amount_k12: parseInt(amountK12) || 0,
@@ -64,12 +65,19 @@ export function ScholarshipManager({ scholarships }: { scholarships: Scholarship
       amount_grad: parseInt(amountGrad) || 0,
       amount: parseInt(amountGrad) || parseInt(amountUniv) || parseInt(amountK12) || 0,
     }
+    let res
     if (editing) {
-      await fetch(`/api/scholarships/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      res = await fetch(`/api/scholarships/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     } else {
-      await fetch('/api/scholarships', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      res = await fetch('/api/scholarships', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     }
-    setLoading(false); resetForm(); router.refresh()
+    setLoading(false)
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}))
+      setFormError(json.error ?? '저장 실패. Supabase에 컬럼이 추가되었는지 확인하세요.')
+      return
+    }
+    resetForm(); router.refresh()
   }
 
   const handleDeactivate = async (id: number) => {
@@ -188,6 +196,11 @@ export function ScholarshipManager({ scholarships }: { scholarships: Scholarship
                     </div>
                   </div>
                 </div>
+                {formError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-sm text-red-700" style={{ wordBreak: 'keep-all' }}>
+                    {formError}
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <button type="submit" disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
                     {loading ? '저장 중...' : '저장'}
