@@ -39,7 +39,7 @@ function filterScholarships(scholarships: Scholarship[], schoolLevel: string): S
 }
 
 const SCHOLARSHIP_DESC: Record<string, string> = {
-  '여호수아 장학금': '대학 입학 대상자에게 지급합니다.',
+  '여호수아 장학금': '고등학교 졸업, 대학, 대학원 입학 대상자에게 지급합니다.',
   '바나바 장학금': '교회 봉사자 대상',
   '다비다 장학금': '생활 보조 대상',
   '다니엘 장학금': '학업 우수자 대상',
