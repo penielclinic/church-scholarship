@@ -77,7 +77,8 @@ export default function AuditDetailPage({ params }: { params: Promise<{ id: stri
   const [session, setSession] = useState<Session | null>(null)
   const [checks, setChecks] = useState<CheckMap>(initChecks)
   const [activeSection, setActiveSection] = useState('qualify')
-  const [activeTab, setActiveTab] = useState<'checklist' | 'report' | 'pdf'>('checklist')
+  const [activeTab, setActiveTab] = useState<'checklist' | 'report' | 'pdf' | 'list'>('checklist')
+  const [sessions, setSessions] = useState<any[]>([])
   const [verdict, setVerdict] = useState<string>('')
   const [opinion, setOpinion] = useState('')
   const [saving, setSaving] = useState(false)
@@ -328,8 +329,15 @@ ${['감사위원','재정부장','장학위원장','부목사','담임목사'].m
           ['checklist', '✅ 체크리스트'],
           ['report', '📋 감사 의견'],
           ['pdf', '📄 PDF 보고서'],
+          ['list', '📂 목록보기'],
         ] as const).map(([tab, label]) => (
-          <button key={tab} onClick={() => setActiveTab(tab)} style={{
+          <button key={tab} onClick={async () => {
+            setActiveTab(tab)
+            if (tab === 'list' && sessions.length === 0) {
+              const res = await fetch('/api/admin/audit')
+              if (res.ok) setSessions(await res.json())
+            }
+          }} style={{
             border: 'none', background: 'none', padding: '11px 18px', cursor: 'pointer', fontSize: 12, fontFamily: 'inherit',
             color: activeTab === tab ? '#6c3483' : '#6b7280',
             borderBottom: `3px solid ${activeTab === tab ? '#6c3483' : 'transparent'}`,
@@ -544,6 +552,68 @@ ${['감사위원','재정부장','장학위원장','부목사','담임목사'].m
             </div>
           </div>
         </div>
+        {/* ── 목록보기 탭 ── */}
+        <div style={{ display: activeTab === 'list' ? 'block' : 'none', height: '100%', overflowY: 'auto', padding: 16 }}>
+          <div style={{ maxWidth: 800 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>📂 감사 기록 목록</div>
+              <a href="/admin/audit/new" style={{
+                background: '#6c3483', color: 'white', textDecoration: 'none',
+                borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 500,
+              }}>+ 새 감사 시작</a>
+            </div>
+            {sessions.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 48, color: '#9ca3af', fontSize: 13 }}>로딩 중...</div>
+            ) : (
+              <div style={{ background: '#fff', borderRadius: 10, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                      {['감사 기간', '감사위원', '감사일', '적합도', '판정', '상태', ''].map(h => (
+                        <th key={h} style={{ padding: '10px 12px', textAlign: h === '적합도' || h === '판정' || h === '상태' || h === '' ? 'center' : 'left', fontWeight: 600, color: '#6b7280', fontSize: 12 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sessions.map((s: any) => {
+                      const isCurrent = s.id === id
+                      const scoreColor = s.score >= 80 ? '#27ae60' : s.score >= 60 ? '#f39c12' : s.score > 0 ? '#e74c3c' : '#9ca3af'
+                      const verdictBg = s.verdict === '적정' ? '#e8f8f0' : s.verdict === '조건부적정' ? '#fef9e7' : s.verdict === '부적정' ? '#fdecea' : '#f3f4f6'
+                      const verdictColor = s.verdict === '적정' ? '#1d6a4a' : s.verdict === '조건부적정' ? '#935116' : s.verdict === '부적정' ? '#c0392b' : '#9ca3af'
+                      return (
+                        <tr key={s.id} style={{ borderBottom: '1px solid #f3f4f6', background: isCurrent ? '#f9f0ff' : 'white' }}>
+                          <td style={{ padding: '10px 12px', fontWeight: isCurrent ? 700 : 400, color: isCurrent ? '#6c3483' : '#111827', whiteSpace: 'nowrap' }}>
+                            {isCurrent && <span style={{ fontSize: 10, background: '#6c3483', color: 'white', borderRadius: 3, padding: '1px 5px', marginRight: 5 }}>현재</span>}
+                            {s.year}년 {s.semester}
+                          </td>
+                          <td style={{ padding: '10px 12px', color: '#374151', whiteSpace: 'nowrap' }}>{s.auditor}</td>
+                          <td style={{ padding: '10px 12px', color: '#6b7280', whiteSpace: 'nowrap' }}>{s.audit_date ? new Date(s.audit_date).toLocaleDateString('ko-KR') : '-'}</td>
+                          <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: scoreColor }}>{s.score > 0 ? `${s.score}점` : '-'}</td>
+                          <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                            {s.verdict ? <span style={{ fontSize: 11, background: verdictBg, color: verdictColor, borderRadius: 99, padding: '2px 8px', fontWeight: 500 }}>{s.verdict}</span> : <span style={{ color: '#d1d5db' }}>-</span>}
+                          </td>
+                          <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                            <span style={{ fontSize: 11, background: s.status === 'completed' ? '#e8f8f0' : '#eff6ff', color: s.status === 'completed' ? '#1d6a4a' : '#1d4ed8', borderRadius: 99, padding: '2px 8px', fontWeight: 500 }}>
+                              {s.status === 'completed' ? '완료' : '진행중'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                            {isCurrent ? (
+                              <span style={{ fontSize: 11, color: '#9ca3af' }}>현재</span>
+                            ) : (
+                              <a href={`/admin/audit/${s.id}`} style={{ fontSize: 11, color: '#6c3483', textDecoration: 'none', fontWeight: 500 }}>보기 →</a>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   )
